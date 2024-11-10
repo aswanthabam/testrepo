@@ -1,82 +1,60 @@
-const { Octokit } = require("@octokit/rest");
-
 async function getUserRepos(github, username) {
-  const { data: userRepos } = await github.rest.repos.listForUser({
+  const userRepos = await github.rest.repos.listForUser({
     username,
     type: "all",
     per_page: 100,
   });
 
-  return Promise.all(
-    userRepos.map(async (repo) => {
-      try {
-        await github.rest.repos.getCommitActivityStats({
-          owner: repo.owner?.login ?? username,
-          repo: repo.name,
-        });
-      } catch (error) {
-        console.warn(
-          `Unable to fetch commit activity for ${repo.name}:`,
-          error
-        );
-      }
+  const repoDetails = await Promise.all(
+    userRepos.data.map(async (repo) => {
+      const commits = await github.rest.repos.getCommitActivityStats({
+        owner: repo.owner.login,
+        repo: repo.name,
+      });
 
       return {
         name: repo.name,
-        stars: repo.stargazers_count ?? 0,
-        forks: repo.forks_count ?? 0,
-        isForked: repo.fork ?? false,
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        isForked: repo.fork,
+
         language: repo.language,
         description: repo.description,
-        createdAt: repo.created_at ?? new Date().toISOString(),
+        createdAt: repo.created_at,
       };
     })
   );
+
+  return repoDetails;
 }
 
 async function getContributedRepos(github, username) {
-  const { data: events } = await github.rest.activity.listPublicEventsForUser({
+  const events = await github.rest.activity.listPublicEventsForUser({
     username,
     per_page: 100,
   });
+  console.log(events);
 
   const contributedRepos = new Map();
 
-  for (const event of events) {
-    if (
-      event.type &&
-      ["PushEvent", "PullRequestEvent", "IssuesEvent"].includes(event.type)
-    ) {
+  for (const event of events.data) {
+    if (["PushEvent", "PullRequestEvent", "IssuesEvent"].includes(event.type)) {
       const repoFullName = event.repo.name;
-      const eventType = event.type;
 
       if (!contributedRepos.has(repoFullName)) {
-        try {
-          const [owner, repo] = repoFullName.split("/");
-          if (!owner || !repo) continue;
+        const [owner, repo] = repoFullName.split("/");
+        const repoDetails = await github.rest.repos.get({
+          owner,
+          repo,
+        });
 
-          const { data: repoDetails } = await github.rest.repos.get({
-            owner,
-            repo,
-          });
-
-          contributedRepos.set(repoFullName, {
-            name: repoFullName,
-            stars: repoDetails.stargazers_count ?? 0,
-            contributionType: new Set([eventType]),
-          });
-        } catch (error) {
-          console.warn(
-            `Unable to fetch repo details for ${repoFullName}:`,
-            error
-          );
-          continue;
-        }
+        contributedRepos.set(repoFullName, {
+          name: repoFullName,
+          stars: repoDetails.data.stargazers_count,
+          contributionType: new Set([event.type]),
+        });
       } else {
-        const repo = contributedRepos.get(repoFullName);
-        if (repo) {
-          repo.contributionType.add(eventType);
-        }
+        contributedRepos.get(repoFullName).contributionType.add(event.type);
       }
     }
   }
@@ -88,30 +66,30 @@ async function getContributedRepos(github, username) {
 }
 
 async function getPRAuthorStats(github, context) {
-  const author = context.payload.pull_request?.user?.login;
-  if (!author) {
-    throw new Error("Pull request author not found in context");
-  }
+  const author = context.payload.pull_request.user.login;
 
   try {
-    const { data: userData } = await github.rest.users.getByUsername({
+    const userData = await github.rest.users.getByUsername({
       username: author,
     });
 
-    const [userRepos, contributedRepos] = await Promise.all([
-      getUserRepos(github, author),
-      getContributedRepos(github, author),
-    ]);
+    const [userRepos /*forkedRepoStats, issueStats*/, contributedRepos] =
+      await Promise.all([
+        getUserRepos(github, author),
+
+        getContributedRepos(github, author),
+      ]);
 
     return {
       author,
       profile: {
-        followers: userData.followers ?? 0,
-        following: userData.following ?? 0,
-        createdAt: userData.created_at ?? new Date().toISOString(),
-        publicRepos: userData.public_repos ?? 0,
+        followers: userData.data.followers,
+        following: userData.data.following,
+        createdAt: userData.data.created_at,
+        publicRepos: userData.data.public_repos,
       },
       repositories: userRepos,
+
       contributions: contributedRepos,
     };
   } catch (error) {
@@ -121,56 +99,42 @@ async function getPRAuthorStats(github, context) {
 }
 
 function formatStatsComment(stats) {
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  return `
+  return (
+    `
 📊 **Stats for ${stats.author}** 📊
 
 👥 **Profile**
 - Followers: ${stats.profile.followers}
 - Following: ${stats.profile.following}
-- Created at: ${formatDate(stats.profile.createdAt)}
+- Created at: ${stats.profile.createdAt}
 - Public Repos: ${stats.profile.publicRepos}
 
-📦 **Repositories** (${stats.repositories.length})
-${stats.repositories
-  .sort((a, b) => b.stars - a.stars)
-  .slice(0, 10)
-  .map(
-    (repo) => `
+📦 **Repositories**
+` +
+    stats.repositories
+      .map((repo) => {
+        return `
 - **${repo.name}**
   - Stars: ${repo.stars}
   - Forks: ${repo.forks}
-  - Language: ${repo.language ?? "N/A"}
-  - Created: ${formatDate(repo.createdAt)}
-  ${repo.description ? `  - Description: ${repo.description}` : ""}`
-  )
-  .join("")}
-
-🔗 **Recent Contributions** (${stats.contributions.length})
-${stats.contributions
-  .sort((a, b) => b.stars - a.stars)
-  .slice(0, 10)
-  .map(
-    (repo) => `
+  - Is Forked: ${repo.isForked}
+  `;
+      })
+      .join("") +
+    (`
+🔗 **Contributions**
+` +
+      stats.contributions.map((repo) => {
+        return `
 - **${repo.name}**
   - Stars: ${repo.stars}
-  - Activities: ${repo.contributionType.join(", ")}`
-  )
-  .join("")}`;
+  - Contribution Type: ${repo.contributionType.join(", ")}
+  `;
+      }))
+  );
 }
 
 async function analyzePRAndComment(github, context) {
-  if (!context.payload.pull_request) {
-    throw new Error("This action can only be run on pull requests");
-  }
-
   try {
     const authorStats = await getPRAuthorStats(github, context);
     const comment = formatStatsComment(authorStats);
@@ -191,6 +155,4 @@ async function analyzePRAndComment(github, context) {
 
 module.exports = {
   analyzePRAndComment,
-  getPRAuthorStats,
-  formatStatsComment,
 };
