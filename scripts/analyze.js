@@ -25,7 +25,7 @@ async function getUserRepoDetails(github, userRepos) {
   const forkedRepos = userRepos.filter((repo) => repo.isForked);
 
   for (const repo of forkedRepos) {
-    const { data: pullRequests } = await gihtub.rest.pulls
+    const { data: pullRequests } = await github.rest.pulls
       .list({
         owner: repo.name.split("/")[0],
         repo: repo.name.split("/")[1],
