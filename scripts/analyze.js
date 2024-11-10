@@ -4,7 +4,7 @@ async function getUserRepos(github, username) {
     type: "all",
     per_page: 1000,
   });
-
+  console.log(userRepos);
   const repoDetails = await Promise.all(
     userRepos.data.map(async (repo) => {
       return {
