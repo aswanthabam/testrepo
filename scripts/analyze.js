@@ -111,7 +111,7 @@ async function calculateUserActivity(
     const { data: events } = await github.rest.activity.listPublicEventsForUser(
       {
         username,
-        per_page: 100,
+        per_page: 10000,
       }
     );
 
@@ -138,7 +138,6 @@ async function calculateUserActivity(
           owner,
           repo,
         });
-        console.log(repoData);
 
         // Get commits by user
         const { data: commits } = await github.rest.repos
@@ -162,6 +161,7 @@ async function calculateUserActivity(
             per_page: 100,
           })
           .catch(() => ({ data: [] }));
+        console.log(issues);
 
         // Get comments by user
         const { data: comments } = await github.rest.issues
