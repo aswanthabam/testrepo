@@ -177,14 +177,13 @@ async function getPRAuthorStats(github, context) {
     repo = context.repo.repo;
     issue_number = context.issue.number;
     body = JSON.stringify(data, null, 4);
-    console.log("Data:", data);
     await octokit.request(
       `POST /repos/${owner}/${repo}/issues/${issue_number}/comments`,
       {
         owner,
         repo,
         issue_number,
-        body: "test",
+        body,
         headers: {
           "X-GitHub-Api-Version": "2022-11-28",
         },
