@@ -33,25 +33,32 @@ async function getUserRepos(github, username) {
 }
 
 async function getPullRequestCounts(github, forkedRepos, username) {
-  const promises = forkedRepos.map(async (repo) => {
-    if (repo.parent) {
-      const [owner, repoName] = repo.parent.full_name.split("/");
-      const { data: pullRequests } = await github.rest.pulls.list({
-        owner,
-        repo: repoName,
-        state: "all",
-        per_page: 100,
-      });
+  const forkedReposWithPRCounts = await Promise.all(
+    forkedRepos.map(async (repo) => {
+      if (repo.parent) {
+        const [owner, repoName] = repo.parent.full_name.split("/");
+        console.log("Fetching PRs for forked repo", repo.parent.full_name);
 
-      repo.pullRequests = pullRequests.filter(
-        (pr) => pr.user?.login === username
-      ).length;
-    } else {
-      console.log("No parent found for forked repo", repo.name);
-    }
-  });
+        const { data: pullRequests } = await github.rest.pulls.list({
+          owner,
+          repo: repoName,
+          state: "all",
+          per_page: 100,
+        });
 
-  await Promise.all(promises);
+        return {
+          ...repo,
+          pullRequests: pullRequests.filter((pr) => pr.user?.login === username)
+            .length,
+        };
+      } else {
+        console.log("No parent found for forked repo", repo.name);
+        return repo;
+      }
+    })
+  );
+
+  return forkedReposWithPRCounts;
 }
 
 async function getRecentEvents(github, username, since = null) {
@@ -76,9 +83,6 @@ async function getRecentEvents(github, username, since = null) {
       const [owner, repoName] = event.repo.name.split("/");
       if (!uniqueRepos.has(event.repo.name)) {
         uniqueRepos.add(event.repo.name);
-        if (event.repo.name != "aswanthabam/testrepo") {
-          continue;
-        }
         // Fetch commits and issues only once per repository
         const [commits, issues] = await Promise.all([
           github.rest.repos
@@ -102,10 +106,13 @@ async function getRecentEvents(github, username, since = null) {
             })
             .then((res) => {
               {
-                console.log("ISSUE", res.data);
-                return res.data.filter(
-                  (issue) => issue.user?.login === username
-                ).length;
+                if (res.data?.node_id && res.data?.node_id.startsWith("I_")) {
+                  return res.data.filter(
+                    (issue) => issue.user?.login === username
+                  ).length;
+                } else {
+                  return 0;
+                }
               }
             })
             .catch(() => 0),
