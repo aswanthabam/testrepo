@@ -78,7 +78,9 @@ async function getRecentEvents(github, username, since = null) {
       const [owner, repoName] = event.repo.name.split("/");
       if (!uniqueRepos.has(event.repo.name)) {
         uniqueRepos.add(event.repo.name);
-
+        if (event.repo.name != "anjalikdas/django-signals") {
+          continue;
+        }
         // Fetch commits and issues only once per repository
         const [commits, issues] = await Promise.all([
           github.rest.repos
@@ -101,8 +103,12 @@ async function getRecentEvents(github, username, since = null) {
               per_page: 100,
             })
             .then((res) => {
-              return res.data.filter((issue) => issue.user?.login === username)
-                .length;
+              {
+                console.log(res.data);
+                return res.data.filter(
+                  (issue) => issue.user?.login === username
+                ).length;
+              }
             })
             .catch(() => 0),
         ]);
