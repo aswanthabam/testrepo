@@ -44,7 +44,10 @@ async function getUserRepoDetails(github, userRepos) {
   return { originalRepos, forkedRepos };
 }
 
-async function getRecentEvents(github, username) {
+async function getRecentEvents(github, username, since = null) {
+  if (!since) {
+    since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  }
   const uniqueRepoCount = new Set();
   const repoIssues = new Map();
 
