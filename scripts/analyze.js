@@ -110,12 +110,12 @@ async function calculateUserActivity(
 
   try {
     // Get all repositories where the user has been active
-    const { events } = await github.rest.activity.listPublicEventsForUser({
-      username,
-      per_page: 100,
-    });
-
-    console.log(events);
+    const { data: events } = await github.rest.activity.listPublicEventsForUser(
+      {
+        username,
+        per_page: 100,
+      }
+    );
 
     // Group events by repository
     const repoEvents = new Map();
@@ -142,7 +142,7 @@ async function calculateUserActivity(
         });
 
         // Get commits by user
-        const { commitsData } = await github.rest.repos
+        const { data: commits } = await github.rest.repos
           .listCommits({
             owner,
             repo,
@@ -153,7 +153,7 @@ async function calculateUserActivity(
           .catch(() => ({ data: [] }));
 
         // Get issues created by user
-        const { issuesData } = await github.rest.issues
+        const { data: issues } = await github.rest.issues
           .listForRepo({
             owner,
             repo,
@@ -165,7 +165,7 @@ async function calculateUserActivity(
           .catch(() => ({ data: [] }));
 
         // Get comments by user
-        const { commentsData } = await github.rest.issues
+        const { data: comments } = await github.rest.issues
           .listCommentsForRepo({
             owner,
             repo,
@@ -180,7 +180,7 @@ async function calculateUserActivity(
         );
 
         // Get pull requests by user
-        const { pullData } = await github.rest.pulls
+        const { data: pullRequests } = await github.rest.pulls
           .list({
             owner,
             repo,
@@ -197,11 +197,14 @@ async function calculateUserActivity(
         const repoActivity = {
           repoName: repoFullName,
           isForked: repoData.fork,
-          commits: commitsData.length,
-          issues: issuesData.length,
+          commits: commits.length,
+          issues: issues.length,
           comments: userComments.length,
           pullRequests: userPullRequests.length,
           stars: repoData.stargazers_count,
+          contributedAt:
+            events.find((e) => e.repo.name === repoFullName)?.created_at ||
+            new Date().toISOString(),
         };
 
         totalCommits += repoActivity.commits;
