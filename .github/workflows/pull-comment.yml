@@ -6,9 +6,7 @@ on:
 jobs:
   analyze-pr-author:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      issues: write
+    permissions: write-all
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
