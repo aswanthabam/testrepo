@@ -7,10 +7,12 @@ async function getUserRepos(github, username) {
 
   userRepos.map(async (repo) => {
     if (repo.fork) {
+      console.log("Fetching parent for forked repo", repo.name);
       var repoData = await github.rest.repos.get({
         owner: repo.owner.login,
         repo: repo.name,
       });
+      console.log("Parent fetched for forked repo", repoData);
       return {
         ...repo,
         parent: repoData.data?.parent,
@@ -99,7 +101,6 @@ async function getRecentEvents(github, username, since = null) {
               per_page: 100,
             })
             .then((res) => {
-              console.log(res.data);
               return res.data.filter((issue) => issue.user?.login === username)
                 .length;
             })
@@ -156,7 +157,7 @@ async function getPRAuthorStats(github, context) {
       owner: context.repo.owner,
       repo: context.repo.repo,
       issue_number: context.issue.number,
-      body: JSON.stringify(data, null, 2),
+      body: JSON.stringify(data, null, 4),
     });
   } catch (error) {
     console.error("Error fetching author stats:", error);
