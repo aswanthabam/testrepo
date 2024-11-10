@@ -1,5 +1,3 @@
-import { Octokit } from "@octokit/rest";
-
 async function getUserRepos(github, username) {
   const { data: userRepos } = await github.rest.repos.listForUser({
     username,
@@ -171,6 +169,7 @@ async function getPRAuthorStats(github, context) {
   try {
     const data = await getData(github, author);
     // console.log("Data:", data);
+    const { Octokit } = await import("@octokit/rest");
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN, // Ensure you have GITHUB_TOKEN in your GitHub Actions secrets
     });
