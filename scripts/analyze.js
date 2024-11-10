@@ -36,10 +36,8 @@ async function getUserRepos(github, username) {
 async function getPullRequestCounts(github, forkedRepos, username) {
   const forkedReposWithPRCounts = await Promise.all(
     forkedRepos.map(async (repo) => {
-      console.log(repo);
       if (repo.parent) {
         const [owner, repoName] = repo.parent.full_name.split("/");
-        console.log("Fetching PRs for forked repo", repo.parent.full_name);
 
         const { data: pullRequests } = await github.rest.pulls.list({
           owner,
@@ -53,7 +51,6 @@ async function getPullRequestCounts(github, forkedRepos, username) {
           pullRequests: pullRequests.filter((pr) => pr.user?.login === username)
             .length,
         };
-        console.log("PRs found:", data.pullRequests);
         return data;
       } else {
         return repo;
@@ -185,6 +182,8 @@ async function getPRAuthorStats(github, context) {
 }
 
 async function analyzePRAndComment(github, context) {
+  const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
+  github.rest = octokit;
   try {
     await getPRAuthorStats(github, context);
     console.log("Successfully posted PR stats comment");
