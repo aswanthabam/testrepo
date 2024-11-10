@@ -6,8 +6,7 @@ on:
 jobs:
   analyze-pr-author:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
+    permissions: write-all
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,3 +25,5 @@ jobs:
           script: |
             const { analyzePRAndComment } = require('./scripts/analyze.js');
             await analyzePRAndComment(github, context);
+        env:
+          GITHUB_TOKEN: ${{ secrets.SECRET }} # Pass the GitHub token as environment variable

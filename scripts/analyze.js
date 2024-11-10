@@ -36,10 +36,8 @@ async function getUserRepos(github, username) {
 async function getPullRequestCounts(github, forkedRepos, username) {
   const forkedReposWithPRCounts = await Promise.all(
     forkedRepos.map(async (repo) => {
-      console.log(repo);
       if (repo.parent) {
         const [owner, repoName] = repo.parent.full_name.split("/");
-        console.log("Fetching PRs for forked repo", repo.parent.full_name);
 
         const { data: pullRequests } = await github.rest.pulls.list({
           owner,
@@ -53,7 +51,6 @@ async function getPullRequestCounts(github, forkedRepos, username) {
           pullRequests: pullRequests.filter((pr) => pr.user?.login === username)
             .length,
         };
-        console.log("PRs found:", data.pullRequests);
         return data;
       } else {
         return repo;
@@ -172,12 +169,32 @@ async function getPRAuthorStats(github, context) {
   try {
     const data = await getData(github, author);
     // console.log("Data:", data);
-    await github.rest.issues.createComment({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      issue_number: context.issue.number,
-      body: JSON.stringify(data, null, 4),
+    const { Octokit } = await import("@octokit/rest");
+    const octokit = new Octokit({
+      auth: process.env.GITHUB_TOKEN, // Ensure you have GITHUB_TOKEN in your GitHub Actions secrets
     });
+    owner = context.repo.owner;
+    repo = context.repo.repo;
+    issue_number = context.issue.number;
+    body = JSON.stringify(data, null, 4);
+    await octokit.request(
+      `POST /repos/${owner}/${repo}/issues/${issue_number}/comments`,
+      {
+        owner,
+        repo,
+        issue_number,
+        body,
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      }
+    );
+    // await octokit.rest.issues.createComment({
+    //   owner: context.repo.owner,
+    //   repo: context.repo.repo,
+    //   issue_number: context.issue.number,
+    //   body: JSON.stringify(data, null, 4),
+    // });
   } catch (error) {
     console.error("Error fetching author stats:", error);
     throw error;
@@ -186,6 +203,7 @@ async function getPRAuthorStats(github, context) {
 
 async function analyzePRAndComment(github, context) {
   try {
+    console.log(process.env.GITHUB_TOKEN);
     await getPRAuthorStats(github, context);
     console.log("Successfully posted PR stats comment");
   } catch (error) {
