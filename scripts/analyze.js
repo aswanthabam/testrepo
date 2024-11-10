@@ -1,163 +1,131 @@
 async function getUserRepos(github, username) {
-  const userRepos = await github.rest.repos.listForUser({
+  const { data: userRepos } = await github.rest.repos.listForUser({
     username,
     type: "all",
-    per_page: 1000,
+    per_page: 100, // GitHub limits per_page to 100
   });
-  const repoDetails = await Promise.all(
-    userRepos.data.map(async (repo) => {
-      return {
-        name: repo.full_name,
-        owner: repo.owner.login,
-        stars: repo.stargazers_count,
-        forks: repo.forks_count,
-        isForked: repo.fork,
-        pullRequests: 0,
-        parent: repo.parent,
-      };
-    })
-  );
 
-  return repoDetails;
+  return userRepos.map((repo) => ({
+    name: repo.full_name,
+    owner: repo.owner.login,
+    stars: repo.stargazers_count,
+    forks: repo.forks_count,
+    isForked: repo.fork,
+    pullRequests: 0,
+    parent: repo.parent,
+  }));
 }
 
-async function getUserRepoDetails(github, userRepos, username) {
-  const originalRepos = userRepos.filter((repo) => !repo.isForked);
-  const forkedRepos = userRepos.filter((repo) => repo.isForked);
-
-  for (const repo of forkedRepos) {
-    if (!repo.parent) {
-      console.log("No parent found for forked repo", repo.name, repo);
-    }
-    const sourceRepo = repo?.parent?.full_name ?? repo.name;
-    const [owner, repoName] = sourceRepo.split("/");
-    const { data: pullRequests } = await github.rest.pulls
-      .list({
+async function getPullRequestCounts(github, forkedRepos, username) {
+  const promises = forkedRepos.map(async (repo) => {
+    if (repo.parent) {
+      const [owner, repoName] = repo.parent.full_name.split("/");
+      const { data: pullRequests } = await github.rest.pulls.list({
         owner,
         repo: repoName,
         state: "all",
         per_page: 100,
-      })
-      .catch(() => ({ data: [] }));
+      });
 
-    const userPullRequests = pullRequests.filter(
-      (pr) => pr.user?.login === username
-    );
+      repo.pullRequests = pullRequests.filter(
+        (pr) => pr.user?.login === username
+      ).length;
+    } else {
+      console.log("No parent found for forked repo", repo.name);
+    }
+  });
 
-    repo.pullRequests = userPullRequests.length;
-  }
-  return { originalRepos, forkedRepos };
+  await Promise.all(promises);
 }
 
 async function getRecentEvents(github, username, since = null) {
-  if (!since) {
-    since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  }
-  const uniqueRepoCount = new Set();
+  since =
+    since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const uniqueRepos = new Set();
   const repoIssues = new Map();
-
-  const events = [];
   let page = 1;
   let hasMore = true;
-  var count = 0;
+  let totalEvents = 0;
 
-  while (hasMore) {
-    const { data: paginatedEvents } =
-      await github.rest.activity.listPublicEventsForUser({
+  while (hasMore && totalEvents < 300) {
+    const { data: events } = await github.rest.activity.listPublicEventsForUser(
+      {
         username,
         per_page: 100,
         page,
-      });
+      }
+    );
 
-    events.push(...paginatedEvents);
-    page++;
-    count += paginatedEvents.length;
-    if (count >= 300) {
-      break;
+    for (const event of events) {
+      const [owner, repoName] = event.repo.name.split("/");
+      if (!uniqueRepos.has(event.repo.name)) {
+        uniqueRepos.add(event.repo.name);
+
+        // Fetch commits and issues only once per repository
+        const [commits, issues] = await Promise.all([
+          github.rest.repos
+            .listCommits({
+              owner,
+              repo: repoName,
+              author: username,
+              since,
+              per_page: 100,
+            })
+            .then((res) => res.data.length)
+            .catch(() => 0),
+
+          github.rest.issues
+            .listForRepo({
+              owner,
+              repo: repoName,
+              since,
+              state: "all",
+              per_page: 100,
+            })
+            .then(
+              (res) =>
+                res.data.filter((issue) => issue.user?.login === username)
+                  .length
+            )
+            .catch(() => 0),
+        ]);
+
+        repoIssues.set(event.repo.name, { commits, issues });
+      }
     }
+
+    page++;
+    totalEvents += events.length;
     hasMore = events.length === 100;
   }
 
-  for (const event of events) {
-    const repoFullName = event.repo.name;
-    const [owner, repo] = repoFullName.split("/");
-    uniqueRepoCount.add(repoFullName);
-    const { data: commits } = await github.rest.repos
-      .listCommits({
-        owner,
-        repo,
-        author: username,
-        since,
-        per_page: 100,
-      })
-      .catch(() => ({ data: [] }));
-
-    // Get issues created by user
-    const { data: issues } = await github.rest.issues
-      .listForRepo({
-        owner,
-        repo,
-        since,
-        state: "all",
-        per_page: 100,
-      })
-      .catch(() => ({ data: [] }));
-
-    const userIssues = issues.filter((issue) => issue.user?.login === username);
-    if (userIssues.length > 0) {
-      if (!repoIssues.has(repoFullName)) {
-        repoIssues.set(repoFullName, {
-          commits: commits.length,
-          issues: userIssues.length,
-        });
-      } else {
-        repoIssues.get(repoFullName).commits += commits.length;
-        repoIssues.get(repoFullName).issues += userIssues.length;
-      }
-    } else {
-      console.log("No issues found");
-    }
-  }
-  return { uniqueRepoCount: uniqueRepoCount.size, repoIssues };
+  return { uniqueRepoCount: uniqueRepos.size, repoIssues };
 }
 
 async function getData(github, username) {
   const userRepos = await getUserRepos(github, username);
-  const { originalRepos, forkedRepos } = await getUserRepoDetails(
-    github,
-    userRepos,
-    username
-  );
+  const originalRepos = userRepos.filter((repo) => !repo.isForked);
+  const forkedRepos = userRepos.filter((repo) => repo.isForked);
+
+  await getPullRequestCounts(github, forkedRepos, username);
   const { uniqueRepoCount, repoIssues } = await getRecentEvents(
     github,
     username
   );
 
-  return {
-    originalRepos,
-    forkedRepos,
-    uniqueRepoCount,
-    repoIssues,
-  };
+  return { originalRepos, forkedRepos, uniqueRepoCount, repoIssues };
 }
 
 function formatRepoStats(repo) {
   return `
 📂 **${repo.name}**
-🌟 Stars: ${repo.stars.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-🔄 Forked: ${
-    repo.isForked
-      ? "Yes"
-      : "No".toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-  }
+🌟 Stars: ${repo.stars.toLocaleString()}
+🔄 Forked: ${repo.isForked ? "Yes" : "No"}
 
-  PR Stats:
-  📅 Commits: ${repo.commits.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-  📅 Issues: ${repo.issues.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-  💬 Comments: ${repo.comments.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-  🔄 Pull Requests: ${repo.pullRequests
-    .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")} 
+PR Stats:
+📅 Commits: ${repo.commits?.toLocaleString() || 0}
+📅 Issues: ${repo.issues?.toLocaleString() || 0}
+🔄 Pull Requests: ${repo.pullRequests?.toLocaleString() || 0}
 `;
 }
 
@@ -165,17 +133,14 @@ async function getPRAuthorStats(github, context) {
   const author = context.payload.pull_request.user.login;
 
   try {
-    const userData = await github.rest.users.getByUsername({
-      username: author,
-    });
     const data = await getData(github, author);
     console.log(data);
-    var comment = JSON.stringify(data, null, 2);
+
     await github.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
       issue_number: context.issue.number,
-      body: comment,
+      body: JSON.stringify(data, null, 2),
     });
   } catch (error) {
     console.error("Error fetching author stats:", error);
@@ -185,7 +150,7 @@ async function getPRAuthorStats(github, context) {
 
 async function analyzePRAndComment(github, context) {
   try {
-    const authorStats = await getPRAuthorStats(github, context);
+    await getPRAuthorStats(github, context);
     console.log("Successfully posted PR stats comment");
   } catch (error) {
     console.error("Error in analyzePRAndComment:", error);
