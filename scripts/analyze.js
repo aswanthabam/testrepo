@@ -76,7 +76,7 @@ async function getRecentEvents(github, username, since = null) {
       const [owner, repoName] = event.repo.name.split("/");
       if (!uniqueRepos.has(event.repo.name)) {
         uniqueRepos.add(event.repo.name);
-        if (event.repo.name != "anjalikdas/django-signals") {
+        if (event.repo.name != "aswanthabam/testrepo") {
           continue;
         }
         // Fetch commits and issues only once per repository
@@ -155,7 +155,6 @@ async function getPRAuthorStats(github, context) {
 
   try {
     const data = await getData(github, author);
-    console.log(data);
 
     await github.rest.issues.createComment({
       owner: context.repo.owner,
