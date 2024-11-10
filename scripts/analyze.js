@@ -29,7 +29,7 @@ async function getUserRepoDetails(github, userRepos) {
     if (!repo.parent) {
       console.log("No parent found for forked repo", repo.name, repo);
     }
-    const sourceRepo = repo?.parent?.full_name ?? repo?.source?.full_name;
+    const sourceRepo = repo?.parent?.full_name ?? repo.name;
     const [owner, repoName] = sourceRepo.split("/");
     const { data: pullRequests } = await github.rest.pulls
       .list({
