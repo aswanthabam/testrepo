@@ -182,8 +182,6 @@ async function getPRAuthorStats(github, context) {
 }
 
 async function analyzePRAndComment(github, context) {
-  const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
-  github.rest = octokit;
   try {
     await getPRAuthorStats(github, context);
     console.log("Successfully posted PR stats comment");
