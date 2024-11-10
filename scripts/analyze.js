@@ -46,11 +46,13 @@ async function getPullRequestCounts(github, forkedRepos, username) {
           per_page: 100,
         });
 
-        return {
+        var data = {
           ...repo,
           pullRequests: pullRequests.filter((pr) => pr.user?.login === username)
             .length,
         };
+        console.log("PRs found:", data.pullRequests);
+        return data;
       } else {
         return repo;
       }
@@ -161,7 +163,7 @@ async function getPRAuthorStats(github, context) {
 
   try {
     const data = await getData(github, author);
-    console.log("Data:", data);
+    // console.log("Data:", data);
     await github.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
