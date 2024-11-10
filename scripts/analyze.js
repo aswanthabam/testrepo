@@ -2,26 +2,127 @@ async function getUserRepos(github, username) {
   const userRepos = await github.rest.repos.listForUser({
     username,
     type: "all",
-    per_page: 100,
+    per_page: 1000,
   });
 
   const repoDetails = await Promise.all(
     userRepos.data.map(async (repo) => {
-      // const commits = await github.rest.repos.getCommitActivityStats({
-      //   owner: repo.owner.login,
-      //   repo: repo.name,
-      // });
-
       return {
         name: repo.name,
         stars: repo.stargazers_count,
         forks: repo.forks_count,
         isForked: repo.fork,
+        pullRequests: 0,
       };
     })
   );
 
   return repoDetails;
+}
+
+async function getUserRepoDetails(userRepos) {
+  const originalRepos = userRepos.filter((repo) => !repo.isForked);
+  const forkedRepos = userRepos.filter((repo) => repo.isForked);
+
+  for (const repo of forkedRepos) {
+    const { data: pullRequests } = await github.rest.pulls
+      .list({
+        owner: repo.name.split("/")[0],
+        repo: repo.name.split("/")[1],
+        state: "all",
+        per_page: 100,
+      })
+      .catch(() => ({ data: [] }));
+
+    const userPullRequests = pullRequests.filter(
+      (pr) => pr.user?.login === username
+    );
+
+    repo.pullRequests = userPullRequests.length;
+  }
+  return { originalRepos, forkedRepos };
+}
+
+async function getRecentEvents(github, username) {
+  const uniqueRepoCount = new Set();
+  const repoIssues = new Map();
+
+  const events = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data: paginatedEvents } =
+      await github.rest.activity.listPublicEventsForUser({
+        username,
+        per_page: 100,
+        page,
+      });
+
+    events.push(...paginatedEvents);
+    page++;
+    hasMore = events.length === 100;
+  }
+
+  for (const event of events) {
+    console.log(event);
+    const repoFullName = event.repo.name;
+    uniqueRepoCount.add(repoFullName);
+
+    const { data: commits } = await github.rest.repos
+      .listCommits({
+        owner,
+        repo,
+        author: username,
+        since,
+        per_page: 100,
+      })
+      .catch(() => ({ data: [] }));
+
+    // Get issues created by user
+    const { data: issues } = await github.rest.issues
+      .listForRepo({
+        owner,
+        repo,
+        since,
+        state: "all",
+        per_page: 100,
+      })
+      .catch(() => ({ data: [] }));
+
+    const userIssues = issues.filter((issue) => issue.user?.login === username);
+    if (userIssues.length > 0) {
+      console.log(userIssues);
+      if (!repoIssues.has(repoFullName)) {
+        repoIssues.set(repoFullName, {
+          commits: commits.length,
+          issues: userIssues.length,
+        });
+      } else {
+        repoIssues.get(repoFullName).commits += commits.length;
+        repoIssues.get(repoFullName).issues += userIssues.length;
+      }
+    } else {
+      console.log("No issues found");
+    }
+  }
+  return { uniqueRepoCount: uniqueRepoCount.size, repoIssues };
+}
+
+async function getData(github, username) {
+  const userRepos = await getUserRepos(github, username);
+  const { originalRepos, forkedRepos } = await getUserRepoDetails(userRepos);
+  const { uniqueRepoCount, repoIssues } = await getRecentEvents(
+    github,
+    username
+  );
+
+  return {
+    originalRepos,
+    forkedRepos,
+    uniqueRepoCount,
+    repoIssues,
+  };
 }
 
 async function getContributedRepos(github, username) {
@@ -68,27 +169,30 @@ async function getPRAuthorStats(github, context) {
     const userData = await github.rest.users.getByUsername({
       username: author,
     });
+    const repos = await getUserRepos(github, author);
+    const data = await getData(repos);
+    console.log(data);
+    //   const [userRepos, userStatus /*forkedRepoStats, issueStats*/] =
+    //     await Promise.all([
+    //       calculateUserActivity(github, author),
+    //       getUserRepos(github, author),
+    //     ]);
 
-    const [userRepos, userStatus /*forkedRepoStats, issueStats*/] =
-      await Promise.all([
-        calculateUserActivity(github, author),
-        getUserRepos(github, author),
-      ]);
-    const [originalRepos, forkedRepos] = [
-      userRepos.repoStats.filter((repo) => !repo.isForked),
-      userRepos.repoStats.filter((repo) => repo.isForked),
-    ];
-    return {
-      author,
-      profile: {
-        followers: userData.data.followers,
-        following: userData.data.following,
-        createdAt: userData.data.created_at,
-        publicRepos: userData.data.public_repos,
-      },
-      originalRepositories: originalRepos,
-      forkedRepositories: forkedRepos,
-    };
+    //   const [originalRepos, forkedRepos] = [
+    //     userRepos.repoStats.filter((repo) => !repo.isForked),
+    //     userRepos.repoStats.filter((repo) => repo.isForked),
+    //   ];
+    //   return {
+    //     author,
+    //     profile: {
+    //       followers: userData.data.followers,
+    //       following: userData.data.following,
+    //       createdAt: userData.data.created_at,
+    //       publicRepos: userData.data.public_repos,
+    //     },
+    //     originalRepositories: originalRepos,
+    //     forkedRepositories: forkedRepos,
+    //   };
   } catch (error) {
     console.error("Error fetching author stats:", error);
     throw error;
@@ -294,14 +398,14 @@ async function calculateScore(github, context) {
 async function analyzePRAndComment(github, context) {
   try {
     const authorStats = await getPRAuthorStats(github, context);
-    const comment = formatStatsComment(authorStats);
+    // const comment = formatStatsComment(authorStats);
 
-    await github.rest.issues.createComment({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      issue_number: context.issue.number,
-      body: comment,
-    });
+    // await github.rest.issues.createComment({
+    //   owner: context.repo.owner,
+    //   repo: context.repo.repo,
+    //   issue_number: context.issue.number,
+    //   body: comment,
+    // });
 
     console.log("Successfully posted PR stats comment");
   } catch (error) {
