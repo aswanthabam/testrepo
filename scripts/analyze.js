@@ -20,12 +20,12 @@ async function getUserRepos(github, username) {
   return repoDetails;
 }
 
-async function getUserRepoDetails(userRepos) {
+async function getUserRepoDetails(github, userRepos) {
   const originalRepos = userRepos.filter((repo) => !repo.isForked);
   const forkedRepos = userRepos.filter((repo) => repo.isForked);
 
   for (const repo of forkedRepos) {
-    const { data: pullRequests } = await github.rest.pulls
+    const { data: pullRequests } = await gihtub.rest.pulls
       .list({
         owner: repo.name.split("/")[0],
         repo: repo.name.split("/")[1],
@@ -111,7 +111,10 @@ async function getRecentEvents(github, username) {
 
 async function getData(github, username) {
   const userRepos = await getUserRepos(github, username);
-  const { originalRepos, forkedRepos } = await getUserRepoDetails(userRepos);
+  const { originalRepos, forkedRepos } = await getUserRepoDetails(
+    github,
+    userRepos
+  );
   const { uniqueRepoCount, repoIssues } = await getRecentEvents(
     github,
     username
