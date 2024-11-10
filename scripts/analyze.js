@@ -65,10 +65,9 @@ async function getRecentEvents(github, username) {
   }
 
   for (const event of events) {
-    console.log(event);
+    const [owner, repo] = repoFullName.split("/");
     const repoFullName = event.repo.name;
     uniqueRepoCount.add(repoFullName);
-
     const { data: commits } = await github.rest.repos
       .listCommits({
         owner,
@@ -115,6 +114,7 @@ async function getData(github, username) {
     github,
     userRepos
   );
+  console.log(originalRepos, forkedRepos);
   const { uniqueRepoCount, repoIssues } = await getRecentEvents(
     github,
     username
