@@ -136,9 +136,15 @@ async function getRecentEvents(github, username, since = null) {
 async function getData(github, username) {
   const userRepos = await getUserRepos(github, username);
   const originalRepos = userRepos.filter((repo) => !repo.isForked);
-  const forkedRepos = userRepos.filter((repo) => repo.isForked);
+  var forkedRepos = userRepos.filter((repo) => repo.isForked);
 
-  await getPullRequestCounts(github, forkedRepos, username);
+  forkedRepos = await getPullRequestCounts(github, forkedRepos, username);
+  forkedRepos = forkedRepos.map((repo) => {
+    return {
+      ...repo,
+      parent: null,
+    };
+  });
   const { uniqueRepoCount, repoIssues } = await getRecentEvents(
     github,
     username
