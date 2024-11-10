@@ -4,11 +4,10 @@ async function getUserRepos(github, username) {
     type: "all",
     per_page: 1000,
   });
-  console.log(userRepos);
   const repoDetails = await Promise.all(
     userRepos.data.map(async (repo) => {
       return {
-        name: repo.name,
+        name: repo.full_name,
         owner: repo.owner.login,
         stars: repo.stargazers_count,
         forks: repo.forks_count,
