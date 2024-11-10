@@ -7,12 +7,10 @@ async function getUserRepos(github, username) {
 
   userRepos.map(async (repo) => {
     if (repo.fork) {
-      console.log("Fetching parent for forked repo", repo.name);
       var repoData = await github.rest.repos.get({
         owner: repo.owner.login,
         repo: repo.name,
       });
-      console.log("Parent fetched for forked repo", repoData);
       return {
         ...repo,
         parent: repoData.data?.parent,
@@ -104,7 +102,7 @@ async function getRecentEvents(github, username, since = null) {
             })
             .then((res) => {
               {
-                console.log(res.data);
+                console.log("ISSUE", res.data);
                 return res.data.filter(
                   (issue) => issue.user?.login === username
                 ).length;
