@@ -1,4 +1,4 @@
-const { Octokit } = require("@octokit/rest");
+import { Octokit } from "@octokit/rest";
 
 async function getUserRepos(github, username) {
   const { data: userRepos } = await github.rest.repos.listForUser({
