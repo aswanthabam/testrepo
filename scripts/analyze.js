@@ -82,11 +82,11 @@ async function getRecentEvents(github, username, since = null) {
               state: "all",
               per_page: 100,
             })
-            .then(
-              (res) =>
-                res.data.filter((issue) => issue.user?.login === username)
-                  .length
-            )
+            .then((res) => {
+              console.log(res.data);
+              return res.data.filter((issue) => issue.user?.login === username)
+                .length;
+            })
             .catch(() => 0),
         ]);
 
