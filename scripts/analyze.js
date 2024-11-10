@@ -60,6 +60,7 @@ async function getRecentEvents(github, username, since = null) {
   const events = [];
   let page = 1;
   let hasMore = true;
+  var count = 0;
 
   while (hasMore) {
     const { data: paginatedEvents } =
@@ -71,6 +72,10 @@ async function getRecentEvents(github, username, since = null) {
 
     events.push(...paginatedEvents);
     page++;
+    count += paginatedEvents.length;
+    if (count >= 300) {
+      break;
+    }
     hasMore = events.length === 100;
   }
 
