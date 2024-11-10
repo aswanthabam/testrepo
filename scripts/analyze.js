@@ -1,3 +1,5 @@
+const { Octokit } = require("@octokit/rest");
+
 async function getUserRepos(github, username) {
   const { data: userRepos } = await github.rest.repos.listForUser({
     username,
@@ -169,7 +171,10 @@ async function getPRAuthorStats(github, context) {
   try {
     const data = await getData(github, author);
     // console.log("Data:", data);
-    await github.rest.issues.createComment({
+    const octokit = new Octokit({
+      auth: process.env.GITHUB_TOKEN, // Ensure you have GITHUB_TOKEN in your GitHub Actions secrets
+    });
+    await octokit.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
       issue_number: context.issue.number,
