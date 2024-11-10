@@ -26,4 +26,4 @@ jobs:
             const { analyzePRAndComment } = require('./scripts/analyze.js');
             await analyzePRAndComment(github, context);
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Pass the GitHub token as environment variable
+          GITHUB_TOKEN: ${{ secrets.SECRETf }} # Pass the GitHub token as environment variable
