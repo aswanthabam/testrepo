@@ -32,107 +32,107 @@ async function getUserRepos(github, username) {
   return repoDetails;
 }
 
-async function getForkedRepoStats(github, username) {
-  const userRepos = await github.rest.repos.listForUser({
-    username,
-    type: "forks",
-    per_page: 100,
-  });
+// async function getForkedRepoStats(github, username) {
+//   const userRepos = await github.rest.repos.listForUser({
+//     username,
+//     type: "forks",
+//     per_page: 100,
+//   });
 
-  const forkedRepoStats = await Promise.all(
-    userRepos.data.map(async (repo) => {
-      // Get parent repository details
-      const parentRepo = await github.rest.repos.get({
-        owner: repo.source?.owner?.login || repo.parent?.owner?.login,
-        repo: repo.source?.name || repo.parent?.name,
-      });
+//   const forkedRepoStats = await Promise.all(
+//     userRepos.data.map(async (repo) => {
+//       // Get parent repository details
+//       const parentRepo = await github.rest.repos.get({
+//         owner: repo.source?.owner?.login || repo.parent?.owner?.login,
+//         repo: repo.source?.name || repo.parent?.name,
+//       });
 
-      // Get PRs made by user to parent repo
-      const prs = await github.rest.pulls.list({
-        owner: parentRepo.data.owner.login,
-        repo: parentRepo.data.name,
-        state: "all",
-        creator: username,
-      });
+//       // Get PRs made by user to parent repo
+//       const prs = await github.rest.pulls.list({
+//         owner: parentRepo.data.owner.login,
+//         repo: parentRepo.data.name,
+//         state: "all",
+//         creator: username,
+//       });
 
-      return {
-        forkedRepo: repo.name,
-        parentRepo: parentRepo.data.full_name,
-        parentStars: parentRepo.data.stargazers_count,
-        prCount: prs.data.length,
-        prDetails: prs.data.map((pr) => ({
-          title: pr.title,
-          state: pr.state,
-          createdAt: pr.created_at,
-        })),
-      };
-    })
-  );
+//       return {
+//         forkedRepo: repo.name,
+//         parentRepo: parentRepo.data.full_name,
+//         parentStars: parentRepo.data.stargazers_count,
+//         prCount: prs.data.length,
+//         prDetails: prs.data.map((pr) => ({
+//           title: pr.title,
+//           state: pr.state,
+//           createdAt: pr.created_at,
+//         })),
+//       };
+//     })
+//   );
 
-  return forkedRepoStats;
-}
+//   return forkedRepoStats;
+// }
 
-async function getUserIssues(github, username) {
-  const issues = await github.rest.search.issuesAndPullRequests({
-    q: `author:${username} type:issue`,
-    per_page: 100,
-  });
+// async function getUserIssues(github, username) {
+//   const issues = await github.rest.search.issuesAndPullRequests({
+//     q: `author:${username} type:issue`,
+//     per_page: 100,
+//   });
 
-  const issueStats = await Promise.all(
-    issues.data.items.map(async (issue) => {
-      const repoDetails = await github.rest.repos.get({
-        owner: issue.repository_url.split("/").slice(-2, -1)[0],
-        repo: issue.repository_url.split("/").slice(-1)[0],
-      });
+//   const issueStats = await Promise.all(
+//     issues.data.items.map(async (issue) => {
+//       const repoDetails = await github.rest.repos.get({
+//         owner: issue.repository_url.split("/").slice(-2, -1)[0],
+//         repo: issue.repository_url.split("/").slice(-1)[0],
+//       });
 
-      return {
-        title: issue.title,
-        repo: issue.repository_url.split("/").slice(-2).join("/"),
-        state: issue.state,
-        createdAt: issue.created_at,
-        repoStars: repoDetails.data.stargazers_count,
-      };
-    })
-  );
+//       return {
+//         title: issue.title,
+//         repo: issue.repository_url.split("/").slice(-2).join("/"),
+//         state: issue.state,
+//         createdAt: issue.created_at,
+//         repoStars: repoDetails.data.stargazers_count,
+//       };
+//     })
+//   );
 
-  return issueStats;
-}
+//   return issueStats;
+// }
 
-async function getContributedRepos(github, username) {
-  const events = await github.rest.activity.listPublicEventsForUser({
-    username,
-    per_page: 100,
-  });
+// async function getContributedRepos(github, username) {
+//   const events = await github.rest.activity.listPublicEventsForUser({
+//     username,
+//     per_page: 100,
+//   });
 
-  const contributedRepos = new Map();
+//   const contributedRepos = new Map();
 
-  for (const event of events.data) {
-    if (["PushEvent", "PullRequestEvent", "IssuesEvent"].includes(event.type)) {
-      const repoFullName = event.repo.name;
+//   for (const event of events.data) {
+//     if (["PushEvent", "PullRequestEvent", "IssuesEvent"].includes(event.type)) {
+//       const repoFullName = event.repo.name;
 
-      if (!contributedRepos.has(repoFullName)) {
-        const [owner, repo] = repoFullName.split("/");
-        const repoDetails = await github.rest.repos.get({
-          owner,
-          repo,
-        });
+//       if (!contributedRepos.has(repoFullName)) {
+//         const [owner, repo] = repoFullName.split("/");
+//         const repoDetails = await github.rest.repos.get({
+//           owner,
+//           repo,
+//         });
 
-        contributedRepos.set(repoFullName, {
-          name: repoFullName,
-          stars: repoDetails.data.stargazers_count,
-          contributionType: new Set([event.type]),
-        });
-      } else {
-        contributedRepos.get(repoFullName).contributionType.add(event.type);
-      }
-    }
-  }
+//         contributedRepos.set(repoFullName, {
+//           name: repoFullName,
+//           stars: repoDetails.data.stargazers_count,
+//           contributionType: new Set([event.type]),
+//         });
+//       } else {
+//         contributedRepos.get(repoFullName).contributionType.add(event.type);
+//       }
+//     }
+//   }
 
-  return Array.from(contributedRepos.values()).map((repo) => ({
-    ...repo,
-    contributionType: Array.from(repo.contributionType),
-  }));
-}
+//   return Array.from(contributedRepos.values()).map((repo) => ({
+//     ...repo,
+//     contributionType: Array.from(repo.contributionType),
+//   }));
+// }
 
 async function getPRAuthorStats(github, context) {
   const author = context.payload.pull_request.user.login;
@@ -144,12 +144,12 @@ async function getPRAuthorStats(github, context) {
     });
 
     // Get all detailed statistics
-    const [userRepos, forkedRepoStats, issueStats, contributedRepos] =
+    const [userRepos /*forkedRepoStats, issueStats, contributedRepos*/] =
       await Promise.all([
         getUserRepos(github, author),
-        getForkedRepoStats(github, author),
-        getUserIssues(github, author),
-        getContributedRepos(github, author),
+        // getForkedRepoStats(github, author),
+        // getUserIssues(github, author),
+        // getContributedRepos(github, author),
       ]);
 
     return {
@@ -161,9 +161,9 @@ async function getPRAuthorStats(github, context) {
         publicRepos: userData.data.public_repos,
       },
       repositories: userRepos,
-      forkedRepos: forkedRepoStats,
-      issues: issueStats,
-      contributions: contributedRepos,
+      // forkedRepos: forkedRepoStats,
+      // issues: issueStats,
+      // contributions: contributedRepos,
     };
   } catch (error) {
     console.error("Error fetching author stats:", error);
@@ -172,76 +172,30 @@ async function getPRAuthorStats(github, context) {
 }
 
 function formatStatsComment(stats) {
-  return `
-## GitHub Activity Stats for @${stats.author}
+  return (
+    `
+📊 **Stats for ${stats.author}** 📊
 
-### 👤 Profile Overview
-- Account created: ${new Date(stats.profile.createdAt).toDateString()}
+👥 **Profile**
 - Followers: ${stats.profile.followers}
 - Following: ${stats.profile.following}
-- Public Repositories: ${stats.profile.publicRepos}
+- Created at: ${stats.profile.createdAt}
+- Public Repos: ${stats.profile.publicRepos}
 
-### 📚 Personal Repositories (Top 5 by stars)
-${stats.repositories
-  .sort((a, b) => b.stars - a.stars)
-  .slice(0, 5)
-  .map(
-    (repo) => `
+📦 **Repositories**
+` +
+    stats.repositories
+      .map((repo) => {
+        return `
 - **${repo.name}**
   - Stars: ${repo.stars}
   - Forks: ${repo.forks}
-  - Commits: ${repo.commitActivity}
-  - Language: ${repo.language || "Not specified"}
-`
-  )
-  .join("")}
-
-### 🔄 Forked Repositories with PRs
-${stats.forkedRepos
-  .map(
-    (repo) => `
-- **${repo.parentRepo}**
-  - Parent Repo Stars: ${repo.parentStars}
-  - PRs Created: ${repo.prCount}
-  ${
-    repo.prDetails.length > 0
-      ? "  - Recent PRs:\n" +
-        repo.prDetails
-          .slice(0, 3)
-          .map((pr) => `    - ${pr.title} (${pr.state})`)
-          .join("\n")
-      : ""
-  }
-`
-  )
-  .join("")}
-
-### 🔍 Issues Created (Top 5 by repo stars)
-${stats.issues
-  .sort((a, b) => b.repoStars - a.repoStars)
-  .slice(0, 5)
-  .map(
-    (issue) => `
-- **${issue.repo}** (${issue.repoStars} ⭐)
-  - ${issue.title} (${issue.state})
-`
-  )
-  .join("")}
-
-### 🤝 Other Contributions (Top 5 by stars)
-${stats.contributions
-  .sort((a, b) => b.stars - a.stars)
-  .slice(0, 5)
-  .map(
-    (repo) => `
-- **${repo.name}** (${repo.stars} ⭐)
-  - Contribution Types: ${repo.contributionType.join(", ")}
-`
-  )
-  .join("")}
-
-*This comment was automatically generated by PR Stats Action*
-`.trim();
+  - Is Forked: ${repo.isForked}
+  - Commit Activity: ${repo.commitActivity}
+  `;
+      })
+      .join("")
+  );
 }
 
 async function analyzePRAndComment(github, context) {
