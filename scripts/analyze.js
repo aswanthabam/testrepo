@@ -136,10 +136,11 @@ async function calculateUserActivity(
 
       try {
         // Get repository details
-        const { repoData } = await github.rest.repos.get({
+        const { data: repoData } = await github.rest.repos.get({
           owner,
           repo,
         });
+        console.log(repoData);
 
         // Get commits by user
         const { data: commits } = await github.rest.repos
