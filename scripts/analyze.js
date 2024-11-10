@@ -14,7 +14,6 @@ async function getUserRepos(github, username) {
         forks: repo.forks_count,
         isForked: repo.fork,
         pullRequests: 0,
-        event: repo,
       };
     })
   );
@@ -27,10 +26,12 @@ async function getUserRepoDetails(github, userRepos) {
   const forkedRepos = userRepos.filter((repo) => repo.isForked);
 
   for (const repo of forkedRepos) {
+    const sourceRepo = repo.parent.full_name;
+    const [owner, repoName] = sourceRepo.split("/");
     const { data: pullRequests } = await github.rest.pulls
       .list({
-        owner: repo.name.split("/")[0],
-        repo: repo.name.split("/")[1],
+        owner,
+        repo: repoName,
         state: "all",
         per_page: 100,
       })
@@ -96,7 +97,6 @@ async function getRecentEvents(github, username, since = null) {
 
     const userIssues = issues.filter((issue) => issue.user?.login === username);
     if (userIssues.length > 0) {
-      console.log(userIssues);
       if (!repoIssues.has(repoFullName)) {
         repoIssues.set(repoFullName, {
           commits: commits.length,
@@ -119,7 +119,6 @@ async function getData(github, username) {
     github,
     userRepos
   );
-  console.log(forkedRepos);
   const { uniqueRepoCount, repoIssues } = await getRecentEvents(
     github,
     username
@@ -138,7 +137,6 @@ async function getContributedRepos(github, username) {
     username,
     per_page: 100,
   });
-  console.log(events);
 
   const contributedRepos = new Map();
 
@@ -236,7 +234,6 @@ async function calculateUserActivity(
             per_page: 100,
           })
           .catch(() => ({ data: [] }));
-        console.log(issues);
 
         // Get comments by user
         const { data: comments } = await github.rest.issues
@@ -373,9 +370,15 @@ async function getPRAuthorStats(github, context) {
     const userData = await github.rest.users.getByUsername({
       username: author,
     });
-    console.log(author);
     const data = await getData(github, author);
     console.log(data);
+    var comment = JSON.stringify(data);
+    await github.rest.issues.createComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: context.issue.number,
+      body: comment,
+    });
     //   const [userRepos, userStatus /*forkedRepoStats, issueStats*/] =
     //     await Promise.all([
     //       calculateUserActivity(github, author),
