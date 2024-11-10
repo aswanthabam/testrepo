@@ -382,7 +382,7 @@ async function getPRAuthorStats(github, context) {
     });
     const data = await getData(github, author);
     console.log(data);
-    var comment = JSON.stringify(data);
+    var comment = JSON.stringify(data, null, 2);
     await github.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
