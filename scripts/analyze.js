@@ -22,7 +22,7 @@ async function getUserRepos(github, username) {
   return repoDetails;
 }
 
-async function getUserRepoDetails(github, userRepos) {
+async function getUserRepoDetails(github, userRepos, username) {
   const originalRepos = userRepos.filter((repo) => !repo.isForked);
   const forkedRepos = userRepos.filter((repo) => repo.isForked);
 
@@ -121,7 +121,8 @@ async function getData(github, username) {
   const userRepos = await getUserRepos(github, username);
   const { originalRepos, forkedRepos } = await getUserRepoDetails(
     github,
-    userRepos
+    userRepos,
+    username
   );
   const { uniqueRepoCount, repoIssues } = await getRecentEvents(
     github,
