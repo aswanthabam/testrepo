@@ -162,43 +162,6 @@ async function getContributedRepos(github, username) {
   }));
 }
 
-async function getPRAuthorStats(github, context) {
-  const author = context.payload.pull_request.user.login;
-
-  try {
-    const userData = await github.rest.users.getByUsername({
-      username: author,
-    });
-    const repos = await getUserRepos(github, author);
-    const data = await getData(repos);
-    console.log(data);
-    //   const [userRepos, userStatus /*forkedRepoStats, issueStats*/] =
-    //     await Promise.all([
-    //       calculateUserActivity(github, author),
-    //       getUserRepos(github, author),
-    //     ]);
-
-    //   const [originalRepos, forkedRepos] = [
-    //     userRepos.repoStats.filter((repo) => !repo.isForked),
-    //     userRepos.repoStats.filter((repo) => repo.isForked),
-    //   ];
-    //   return {
-    //     author,
-    //     profile: {
-    //       followers: userData.data.followers,
-    //       following: userData.data.following,
-    //       createdAt: userData.data.created_at,
-    //       publicRepos: userData.data.public_repos,
-    //     },
-    //     originalRepositories: originalRepos,
-    //     forkedRepositories: forkedRepos,
-    //   };
-  } catch (error) {
-    console.error("Error fetching author stats:", error);
-    throw error;
-  }
-}
-
 async function calculateUserActivity(
   github,
   username,
@@ -393,6 +356,43 @@ async function calculateScore(github, context) {
   var originalRepoCount = repoStats.length;
 
   var score = originalRepoCount * Math.sqrt(starCount);
+}
+
+async function getPRAuthorStats(github, context) {
+  const author = context.payload.pull_request.user.login;
+
+  try {
+    const userData = await github.rest.users.getByUsername({
+      username: author,
+    });
+    console.log(author);
+    const data = await getData(github, author);
+    console.log(data);
+    //   const [userRepos, userStatus /*forkedRepoStats, issueStats*/] =
+    //     await Promise.all([
+    //       calculateUserActivity(github, author),
+    //       getUserRepos(github, author),
+    //     ]);
+
+    //   const [originalRepos, forkedRepos] = [
+    //     userRepos.repoStats.filter((repo) => !repo.isForked),
+    //     userRepos.repoStats.filter((repo) => repo.isForked),
+    //   ];
+    //   return {
+    //     author,
+    //     profile: {
+    //       followers: userData.data.followers,
+    //       following: userData.data.following,
+    //       createdAt: userData.data.created_at,
+    //       publicRepos: userData.data.public_repos,
+    //     },
+    //     originalRepositories: originalRepos,
+    //     forkedRepositories: forkedRepos,
+    //   };
+  } catch (error) {
+    console.error("Error fetching author stats:", error);
+    throw error;
+  }
 }
 
 async function analyzePRAndComment(github, context) {
