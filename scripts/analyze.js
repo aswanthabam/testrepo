@@ -5,7 +5,7 @@ async function getUserRepos(github, username) {
     per_page: 100, // GitHub limits per_page to 100
   });
 
-  userRepos.map(async (repo) => {
+  var data = userRepos.map(async (repo) => {
     if (repo.fork) {
       var repoData = await github.rest.repos.get({
         owner: repo.owner.login,
@@ -21,7 +21,7 @@ async function getUserRepos(github, username) {
     }
   });
 
-  return userRepos.map((repo) => ({
+  return data.map((repo) => ({
     name: repo.full_name,
     owner: repo.owner.login,
     stars: repo.stargazers_count,
