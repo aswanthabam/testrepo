@@ -9,6 +9,7 @@ async function getUserRepos(github, username) {
     userRepos.data.map(async (repo) => {
       return {
         name: repo.name,
+        owner: repo.owner.login,
         stars: repo.stargazers_count,
         forks: repo.forks_count,
         isForked: repo.fork,
@@ -65,8 +66,8 @@ async function getRecentEvents(github, username) {
   }
 
   for (const event of events) {
-    const [owner, repo] = repoFullName.split("/");
     const repoFullName = event.repo.name;
+    const [owner, repo] = repoFullName.split("/");
     uniqueRepoCount.add(repoFullName);
     const { data: commits } = await github.rest.repos
       .listCommits({
