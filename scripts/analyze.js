@@ -173,12 +173,28 @@ async function getPRAuthorStats(github, context) {
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN, // Ensure you have GITHUB_TOKEN in your GitHub Actions secrets
     });
-    await octokit.rest.issues.createComment({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      issue_number: context.issue.number,
-      body: JSON.stringify(data, null, 4),
-    });
+    owner = context.repo.owner;
+    repo = context.repo.repo;
+    issue_number = context.issue.number;
+    body = JSON.stringify(data, null, 4);
+    await octokit.request(
+      `POST /repos/${owner}/${repo}/issues/${issue_number}/comments`,
+      {
+        owner,
+        repo,
+        issue_number,
+        body,
+        headers: {
+          "X-GitHub-Api-Version": "2022-11-28",
+        },
+      }
+    );
+    // await octokit.rest.issues.createComment({
+    //   owner: context.repo.owner,
+    //   repo: context.repo.repo,
+    //   issue_number: context.issue.number,
+    //   body: JSON.stringify(data, null, 4),
+    // });
   } catch (error) {
     console.error("Error fetching author stats:", error);
     throw error;
