@@ -14,6 +14,7 @@ async function getUserRepos(github, username) {
         forks: repo.forks_count,
         isForked: repo.fork,
         pullRequests: 0,
+        event: repo,
       };
     })
   );
@@ -118,7 +119,7 @@ async function getData(github, username) {
     github,
     userRepos
   );
-  console.log(originalRepos, forkedRepos);
+  console.log(forkedRepos);
   const { uniqueRepoCount, repoIssues } = await getRecentEvents(
     github,
     username
