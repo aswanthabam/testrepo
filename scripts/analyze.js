@@ -14,6 +14,7 @@ async function getUserRepos(github, username) {
         forks: repo.forks_count,
         isForked: repo.fork,
         pullRequests: 0,
+        parent: repo.parent,
       };
     })
   );
@@ -26,7 +27,10 @@ async function getUserRepoDetails(github, userRepos) {
   const forkedRepos = userRepos.filter((repo) => repo.isForked);
 
   for (const repo of forkedRepos) {
-    const sourceRepo = repo.parent.full_name;
+    if (!repo.parent) {
+      console.log("No parent found for forked repo", repo.name, repo);
+    }
+    const sourceRepo = repo?.parent?.full_name ?? repo?.source?.full_name;
     const [owner, repoName] = sourceRepo.split("/");
     const { data: pullRequests } = await github.rest.pulls
       .list({
