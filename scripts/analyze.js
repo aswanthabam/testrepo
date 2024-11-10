@@ -19,9 +19,9 @@ async function getUserRepos(github, username) {
         stars: repo.stargazers_count,
         forks: repo.forks_count,
         isForked: repo.fork,
-        commitActivity: commits.data
-          ? commits.data.reduce((sum, week) => sum + week.total, 0)
-          : 0,
+        // commitActivity: commits.data
+        //   ? commits.data.reduce((sum, week) => sum + week.total, 0)
+        //   : 0,
         language: repo.language,
         description: repo.description,
         createdAt: repo.created_at,
