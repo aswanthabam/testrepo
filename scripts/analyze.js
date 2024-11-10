@@ -110,10 +110,12 @@ async function calculateUserActivity(
 
   try {
     // Get all repositories where the user has been active
-    const { data } = await github.rest.activity.listPublicEventsForUser({
+    const { events } = await github.rest.activity.listPublicEventsForUser({
       username,
       per_page: 100,
     });
+
+    console.log(events);
 
     // Group events by repository
     const repoEvents = new Map();
@@ -195,14 +197,11 @@ async function calculateUserActivity(
         const repoActivity = {
           repoName: repoFullName,
           isForked: repoData.fork,
-          commits: commits.length,
-          issues: issues.length,
+          commits: commitsData.length,
+          issues: issuesData.length,
           comments: userComments.length,
           pullRequests: userPullRequests.length,
           stars: repoData.stargazers_count,
-          contributedAt:
-            events.find((e) => e.repo.name === repoFullName)?.created_at ||
-            new Date().toISOString(),
         };
 
         totalCommits += repoActivity.commits;
