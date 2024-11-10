@@ -52,7 +52,6 @@ async function getPullRequestCounts(github, forkedRepos, username) {
             .length,
         };
       } else {
-        console.log("No parent found for forked repo", repo.name);
         return repo;
       }
     })
@@ -162,7 +161,7 @@ async function getPRAuthorStats(github, context) {
 
   try {
     const data = await getData(github, author);
-
+    console.log("Data:", data);
     await github.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
