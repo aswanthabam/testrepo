@@ -194,7 +194,7 @@ async function calculateUserActivity(
 
         // Calculate statistics for this repository
         const repoActivity = {
-          repoName: repoFullName,
+          name: repoFullName,
           isForked: repoData.fork,
           commits: commits.length,
           issues: issues.length,
