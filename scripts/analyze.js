@@ -73,8 +73,6 @@ async function getPRAuthorStats(github, context) {
       await Promise.all([
         calculateUserActivity(github, author),
         getUserRepos(github, author),
-
-        getContributedRepos(github, author),
       ]);
     const [originalRepos, forkedRepos] = [
       userRepos.repoStats.filter((repo) => !repo.isForked),
@@ -243,7 +241,6 @@ function formatRepoStats(repo) {
   return `
 📂 **${repo.name}**
 🌟 Stars: ${repo.stars.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-🍴 Forks: ${repo.forks.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
 🔄 Forked: ${
     repo.isForked
       ? "Yes"
