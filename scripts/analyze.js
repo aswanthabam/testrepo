@@ -14,6 +14,7 @@ async function getUserRepos(github, username) {
         isForked: repo.fork,
         pullRequests: 0,
         parent: repo.parent,
+        event: repo.form ? repo : null,
       };
     })
   );
