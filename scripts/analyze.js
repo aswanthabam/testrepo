@@ -35,6 +35,7 @@ async function getUserRepos(github, username) {
 async function getPullRequestCounts(github, forkedRepos, username) {
   const forkedReposWithPRCounts = await Promise.all(
     forkedRepos.map(async (repo) => {
+      console.log(repo);
       if (repo.parent) {
         const [owner, repoName] = repo.parent.full_name.split("/");
         console.log("Fetching PRs for forked repo", repo.parent.full_name);
