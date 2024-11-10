@@ -170,6 +170,7 @@ async function getPRAuthorStats(github, context) {
     const data = await getData(github, author);
     // console.log("Data:", data);
     const { Octokit } = await import("@octokit/rest");
+    console.log(process.env.GITHUB_TOKEN);
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN, // Ensure you have GITHUB_TOKEN in your GitHub Actions secrets
     });
