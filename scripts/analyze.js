@@ -205,7 +205,7 @@ async function getStatsMessage(data) {
     0
   );
   console.log("Repo Issues:", repoIssues);
-  const totalIssues = Array.from(repoIssues.values()).reduce(
+  const issueCount = Array.from(repoIssues.values()).reduce(
     (sum, repo) => sum + repo.issues,
     0
   );
