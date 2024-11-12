@@ -116,6 +116,7 @@ async function getRecentEvents(github, username, since = null) {
       const [owner, repoName] = event.repo.name.split("/");
       if (!uniqueRepos.has(event.repo.name)) {
         uniqueRepos.add(event.repo.name);
+        console.log(event.repo.name);
         // Fetch commits and issues only once per repository
         const [commits, issues] = await Promise.all([
           github.rest.repos
