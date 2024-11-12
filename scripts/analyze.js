@@ -1,6 +1,6 @@
 const fetch = require("node-fetch");
 
-SECRET = process.env.GITHUB_TOKEN;
+SECRET = process.env.SECRET;
 
 async function postComment(owner, repo, issue_number, body) {
   const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}/comments`;
