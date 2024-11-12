@@ -4,7 +4,7 @@ SECRET = process.env.SECRET;
 
 async function postComment(owner, repo, issue_number, body) {
   const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}/comments`;
-
+  console.log("Posting comment to:", url);
   const response = await fetch(url, {
     method: "POST",
     headers: {
@@ -238,27 +238,14 @@ async function getPRAuthorStats(github, context) {
     repo = context.repo.repo;
     issue_number = context.issue.number;
     // body = JSON.stringify(data, null, 4);
-    body = getStatsMessage(data);
-    console.log("Posting comment with data:", body);
-    await postComment(owner, repo, issue_number, body);
-    // await octokit.request(
-    //   `POST /repos/${owner}/${repo}/issues/${issue_number}/comments`,
-    //   {
-    //     owner,
-    //     repo,
-    //     issue_number,
-    //     body,
-    //     headers: {
-    //       "X-GitHub-Api-Version": "2022-11-28",
-    //     },
-    //   }
-    // );
-    // await octokit.rest.issues.createComment({
-    //   owner: context.repo.owner,
-    //   repo: context.repo.repo,
-    //   issue_number: context.issue.number,
-    //   body: JSON.stringify(data, null, 4),
-    // });
+    body = await getStatsMessage(data);
+    // await postComment(owner, repo, issue_number, body);
+    await octokit.rest.issues.createComment({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      issue_number: context.issue.number,
+      body: JSON.stringify(data, null, 4),
+    });
   } catch (error) {
     console.error("Error fetching author stats:", error);
     throw error;
