@@ -198,30 +198,24 @@ PR Stats:
 
 async function getStatsMessage(data) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
+  const originalRepoCount = originalRepos.length;
+  const forkedRepoCount = forkedRepos.length;
+  const pullRequestCount = forkedRepos.reduce(
+    (acc, repo) => acc + repo.pullRequests,
+    0
+  );
+  const issueCount = repoIssues.reduce(
+    (acc, [repo, { issues }]) => acc + issues,
+    0
+  );
 
-  const originalRepoStats = originalRepos.map(formatRepoStats).join("\n");
-  const forkedRepoStats = forkedRepos.map(formatRepoStats).join("\n");
-
-  const repoStats = `
-📦 **Repository Stats**
-
-📂 **Original Repositories**
-${originalRepoStats}
-
-📂 **Forked Repositories**
-
-${forkedRepoStats}
-
-📅 **Recent Events**
-
-📂 Unique Repositories: ${uniqueRepoCount}
-
-📂 **Issues**
-
-${Array.from(repoIssues.entries())}
+  const message = `
+  **Total Repositories Created**: ${originalRepoCount}
+  **Total Forked Repositories**: ${forkedRepoCount}
+  **Total Pull Requests Created**: ${pullRequestCount}
+  **Total Issues Created**: ${issueCount}
   `;
-
-  return repoStats;
+  return message;
 }
 
 async function getPRAuthorStats(github, context) {
