@@ -196,6 +196,35 @@ PR Stats:
 `;
 }
 
+async function getStatsMessage(data) {
+  const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
+
+  const originalRepoStats = originalRepos.map(formatRepoStats).join("\n");
+  const forkedRepoStats = forkedRepos.map(formatRepoStats).join("\n");
+
+  const repoStats = `
+📦 **Repository Stats**
+
+📂 **Original Repositories**
+${originalRepoStats}
+
+📂 **Forked Repositories**
+
+${forkedRepoStats}
+
+📅 **Recent Events**
+
+📂 Unique Repositories: ${uniqueRepoCount}
+
+📂 **Issues**
+
+${Array.from(repoIssues.entries())}
+  `;
+
+  return repoStats;
+}
+t;
+
 async function getPRAuthorStats(github, context) {
   const author = context.payload.pull_request.user.login;
 
@@ -209,7 +238,8 @@ async function getPRAuthorStats(github, context) {
     owner = context.repo.owner;
     repo = context.repo.repo;
     issue_number = context.issue.number;
-    body = JSON.stringify(data, null, 4);
+    // body = JSON.stringify(data, null, 4);
+    body = getStatsMessage(data);
     console.log("Posting comment with data:", body);
     await postComment(owner, repo, issue_number, body);
     // await octokit.request(
