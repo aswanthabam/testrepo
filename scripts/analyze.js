@@ -25,7 +25,8 @@ async function postComment(owner, repo, issue_number, body) {
     console.error(
       "Failed to post comment",
       response.status,
-      await response.json()
+      await response.json(),
+      SECRET
     );
   }
 }
