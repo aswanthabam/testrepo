@@ -245,7 +245,7 @@ async function getPRAuthorStats(github, context) {
       owner: context.repo.owner,
       repo: context.repo.repo,
       issue_number: context.issue.number,
-      body: JSON.stringify(data, null, 4),
+      body: body,
     });
   } catch (error) {
     console.error("Error fetching author stats:", error);
