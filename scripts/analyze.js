@@ -1,3 +1,35 @@
+const fetch = require("node-fetch");
+
+SECRET = process.env.GITHUB_TOKEN;
+
+async function postComment(owner, repo, issue_number, body) {
+  const url = `https://api.github.com/repos/${owner}/${repo}/issues/${issue_number}/comments`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `token ${GITHUB_TOKEN}`,
+      Accept: "application/vnd.github.v3+json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      body: body,
+    }),
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    console.log("Comment posted successfully!");
+    console.log("Comment URL:", data.html_url);
+  } else {
+    console.error(
+      "Failed to post comment",
+      response.status,
+      await response.json()
+    );
+  }
+}
+
 async function getUserRepos(github, username) {
   const { data: userRepos } = await github.rest.repos.listForUser({
     username,
@@ -177,18 +209,20 @@ async function getPRAuthorStats(github, context) {
     repo = context.repo.repo;
     issue_number = context.issue.number;
     body = JSON.stringify(data, null, 4);
-    await octokit.request(
-      `POST /repos/${owner}/${repo}/issues/${issue_number}/comments`,
-      {
-        owner,
-        repo,
-        issue_number,
-        body,
-        headers: {
-          "X-GitHub-Api-Version": "2022-11-28",
-        },
-      }
-    );
+    console.log("Posting comment with data:", body);
+    postComment(owner, repo, issue_number, body);
+    // await octokit.request(
+    //   `POST /repos/${owner}/${repo}/issues/${issue_number}/comments`,
+    //   {
+    //     owner,
+    //     repo,
+    //     issue_number,
+    //     body,
+    //     headers: {
+    //       "X-GitHub-Api-Version": "2022-11-28",
+    //     },
+    //   }
+    // );
     // await octokit.rest.issues.createComment({
     //   owner: context.repo.owner,
     //   repo: context.repo.repo,
