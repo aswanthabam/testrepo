@@ -204,6 +204,7 @@ async function getStatsMessage(data) {
     (acc, repo) => acc + repo.pullRequests,
     0
   );
+  console.log("Repo Issues:", repoIssues);
   const issueCount = Object.values(data).reduce(
     (sum, item) => sum + item.issue,
     0
