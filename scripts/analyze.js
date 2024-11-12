@@ -230,17 +230,18 @@ async function getPRAuthorStats(github, context) {
   try {
     const data = await getData(github, author);
     // console.log("Data:", data);
-    const { Octokit } = await import("@octokit/rest");
-    const octokit = new Octokit({
-      auth: process.env.GITHUB_TOKEN, // Ensure you have GITHUB_TOKEN in your GitHub Actions secrets
-    });
+    // const { Octokit } = await import("@octokit/rest");
+    // const octokit = new Octokit({
+    //   auth: process.env.GITHUB_TOKEN, // Ensure you have GITHUB_TOKEN in your GitHub Actions secrets
+    // });
     owner = context.repo.owner;
     repo = context.repo.repo;
     issue_number = context.issue.number;
     // body = JSON.stringify(data, null, 4);
     body = await getStatsMessage(data);
+    // console.log("Posting comment with data:", body);
     // await postComment(owner, repo, issue_number, body);
-    await octokit.rest.issues.createComment({
+    await github.rest.issues.createComment({
       owner: context.repo.owner,
       repo: context.repo.repo,
       issue_number: context.issue.number,
