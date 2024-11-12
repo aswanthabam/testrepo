@@ -8,7 +8,7 @@ async function postComment(owner, repo, issue_number, body) {
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `token ${GITHUB_TOKEN}`,
+      Authorization: `token ${SECRET}`,
       Accept: "application/vnd.github.v3+json",
       "Content-Type": "application/json",
     },
@@ -210,7 +210,7 @@ async function getPRAuthorStats(github, context) {
     issue_number = context.issue.number;
     body = JSON.stringify(data, null, 4);
     console.log("Posting comment with data:", body);
-    postComment(owner, repo, issue_number, body);
+    await postComment(owner, repo, issue_number, body);
     // await octokit.request(
     //   `POST /repos/${owner}/${repo}/issues/${issue_number}/comments`,
     //   {
