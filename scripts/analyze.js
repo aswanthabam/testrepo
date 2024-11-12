@@ -223,7 +223,6 @@ ${Array.from(repoIssues.entries())}
 
   return repoStats;
 }
-t;
 
 async function getPRAuthorStats(github, context) {
   const author = context.payload.pull_request.user.login;
