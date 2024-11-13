@@ -230,8 +230,9 @@ async function getStatsMessage(data) {
   var issueCount = 0;
   var commitCount = 0;
   for (var [repo, value] of repoIssues) {
+    console.log(value);
     // var [owner, repoName] = repo.split("/");
-    var [commits, issues] = value;
+    var { commits, issues } = value;
     if (!userRepos.includes(repo)) {
       issueNonForkCount += issues;
     } else {
@@ -271,7 +272,7 @@ async function getStatsMessage(data) {
   **Total Score**: ${totalScore}
 
   ## Next Steps
-  
+
   ${
     totalScore > 300
       ? "🚀 **Congratulations!**\nYour opensource contributions are great!\nYou can participate in Top100Coders"
