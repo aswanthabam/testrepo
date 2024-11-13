@@ -203,7 +203,7 @@ async function getData(github, username) {
 // `;
 // }
 
-async function getStatsMessage(data) {
+async function getStatsMessage(data, username) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
   const originalRepoCount = originalRepos.length;
   const originalRepoStars = originalRepos
@@ -303,7 +303,7 @@ async function getPRAuthorStats(github, context) {
     issue_number = context.issue.number;
     body = JSON.stringify(data, null, 4);
     // console.log(data);
-    body = await getStatsMessage(data);
+    body = await getStatsMessage(data, author);
     // console.log("Posting comment with data:", body);
     // await postComment(owner, repo, issue_number, body);
     await github.rest.issues.createComment({
