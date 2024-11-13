@@ -210,7 +210,7 @@ async function getStatsMessage(data, username) {
     .filter((repo) => repo.name.split("/")[0] == username)
     .reduce((acc, repo) => {
       console.log(acc, repo.stars);
-      return acc + parseInt(repo.stars);
+      return parseInt(acc) + parseInt(repo.stars);
     });
   console.log("OSTARS", originalRepoStars);
   const forkedRepoCount = forkedRepos.length;
