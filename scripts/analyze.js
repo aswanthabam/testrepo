@@ -243,6 +243,8 @@ async function getStatsMessage(data) {
     }
   }
   var eventScore = commitCount + issueCount;
+  console.log(originalRepoCount, originalRepoStars);
+  console.log(pullRequestCount, pullRequestRepoStars);
   var contributionScore =
     originalRepoCount * Math.sqrt(originalRepoStars) +
     pullRequestCount * 3 * Math.log10(pullRequestRepoStars + 1);
