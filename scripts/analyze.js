@@ -116,7 +116,6 @@ async function getRecentEvents(github, username, since = null) {
       const [owner, repoName] = event.repo.name.split("/");
       if (!uniqueRepos.has(event.repo.name)) {
         uniqueRepos.add(event.repo.name);
-        console.log("Repo:", event);
         console.log(event.repo.name);
         // Fetch commits and issues only once per repository
         const [commits, issues] = await Promise.all([
@@ -141,6 +140,7 @@ async function getRecentEvents(github, username, since = null) {
             })
             .then((res) => {
               {
+                console.log("IssueResponse:", res);
                 if (res.data?.node_id && res.data?.node_id.startsWith("I_")) {
                   return res.data.filter(
                     (issue) => issue.user?.login === username
@@ -185,18 +185,18 @@ async function getData(github, username) {
   return { originalRepos, forkedRepos, uniqueRepoCount, repoIssues };
 }
 
-function formatRepoStats(repo) {
-  return `
-📂 **${repo.name}**
-🌟 Stars: ${repo.stars.toLocaleString()}
-🔄 Forked: ${repo.isForked ? "Yes" : "No"}
+// function formatRepoStats(repo) {
+//   return `
+// 📂 **${repo.name}**
+// 🌟 Stars: ${repo.stars.toLocaleString()}
+// 🔄 Forked: ${repo.isForked ? "Yes" : "No"}
 
-PR Stats:
-📅 Commits: ${repo.commits?.toLocaleString() || 0}
-📅 Issues: ${repo.issues?.toLocaleString() || 0}
-🔄 Pull Requests: ${repo.pullRequests?.toLocaleString() || 0}
-`;
-}
+// PR Stats:
+// 📅 Commits: ${repo.commits?.toLocaleString() || 0}
+// 📅 Issues: ${repo.issues?.toLocaleString() || 0}
+// 🔄 Pull Requests: ${repo.pullRequests?.toLocaleString() || 0}
+// `;
+// }
 
 async function getStatsMessage(data) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
@@ -234,7 +234,8 @@ async function getPRAuthorStats(github, context) {
     owner = context.repo.owner;
     repo = context.repo.repo;
     issue_number = context.issue.number;
-    // body = JSON.stringify(data, null, 4);
+    body = JSON.stringify(data, null, 4);
+    // console.log(data);
     body = await getStatsMessage(data);
     // console.log("Posting comment with data:", body);
     // await postComment(owner, repo, issue_number, body);
@@ -252,7 +253,6 @@ async function getPRAuthorStats(github, context) {
 
 async function analyzePRAndComment(github, context) {
   try {
-    console.log(process.env.GITHUB_TOKEN);
     await getPRAuthorStats(github, context);
     console.log("Successfully posted PR stats comment");
   } catch (error) {
