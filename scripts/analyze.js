@@ -147,14 +147,16 @@ async function getRecentEvents(github, username, since = null) {
                     JSON.stringify(res.data, null, 4)
                   );
                 }
-                // console.log("IssueResponse:", res);
-                if (res.data?.node_id && res.data?.node_id.startsWith("I_")) {
-                  return res.data.filter(
-                    (issue) => issue.user?.login === username
-                  ).length;
-                } else {
-                  return 0;
+                var count = 0;
+                for (var data in res.data) {
+                  if (data?.node_id && data?.node_id.startsWith("I_")) {
+                    count += data.filter(
+                      (issue) => issue.user?.login === username
+                    ).length;
+                  }
                 }
+                return count;
+                // console.log("IssueResponse:", res);
               }
             })
             .catch(() => 0),
