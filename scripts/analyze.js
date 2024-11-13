@@ -209,7 +209,7 @@ async function getStatsMessage(data, username) {
   const originalRepoStars = originalRepos
     .filter((repo) => repo.name.split("/")[0] == username)
     .reduce((acc, repo) => {
-      print(acc, repo.stars);
+      console.log(acc, repo.stars);
       return acc + parseInt(repo.stars);
     });
   console.log("OSTARS", originalRepoStars);
