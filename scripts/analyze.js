@@ -145,10 +145,13 @@ async function getRecentEvents(github, username, since = null) {
                     "IssueResponse:",
                     JSON.stringify(res.data, null, 4)
                   );
-                  var res_data = JSON.parse(JSON.stringify(res.data, null, 4));
+                  var res_data = Array.from(
+                    JSON.parse(JSON.stringify(res.data, null, 4))
+                  );
                   console.log("Response Type", typeof res_data);
                 }
                 var count = 0;
+                console.log(res_data, res_data.length);
                 for (var data in res_data) {
                   if (owner == "Ansanjohny") {
                     console.log(data);
