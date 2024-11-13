@@ -207,9 +207,9 @@ async function getStatsMessage(data, username) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
   const originalRepoCount = originalRepos.length;
   var originalRepoStars = 0;
-  for (var repo of originalRepos.filter(
-    (repo) => repo.name.split("/")[0] == username
-  )) {
+  for (var repo of originalRepos
+    .filter((repo) => repo.name.split("/")[0] == username)
+    .filter((repo) => repo.stars >= 10)) {
     originalRepoStars += repo.stars;
   }
   const forkedRepoCount = forkedRepos.length;
@@ -220,6 +220,7 @@ async function getStatsMessage(data, username) {
   );
   const pullRequestRepoStars = forkedRepos
     .filter((repo) => repo.pullRequests > 0)
+    .filter((repo) => repo.stars >= 10)
     .reduce((acc, repo) => acc + repo.stars, 0);
   const userRepos = [];
   for (var repo of originalRepos) {
@@ -248,14 +249,18 @@ async function getStatsMessage(data, username) {
   var eventScore = commitCount + issueCount;
   console.log(originalRepoCount, originalRepoStars);
   console.log(pullRequestCount, pullRequestRepoStars);
-  var contributionScore =
-    originalRepoCount * Math.sqrt(originalRepoStars) +
+  var originakRepoScore = originalRepoCount * Math.sqrt(originalRepoStars);
+  var pullRequestScore =
     pullRequestCount * 3 * Math.log10(pullRequestRepoStars + 1);
   var issueScore = issueNonForkCount * 2;
   var recentContribScore = uniqueRepoCount * 3;
 
   var totalScore =
-    eventScore + contributionScore + issueScore + recentContribScore;
+    (eventScore < 90 ? eventScore : 90) +
+    originakRepoScore +
+    pullRequestScore +
+    issueScore +
+    recentContribScore;
   const message = `
   # Stats for ${originalRepos[0].owner}
   
@@ -270,7 +275,8 @@ async function getStatsMessage(data, username) {
   ## Scoring
 
   **Event Score**: ${eventScore}
-  **Contribution Score**: ${contributionScore}
+  **Original Repository Score**: ${originakRepoScore}
+  **Pull Request Score**: ${pullRequestScore}
   **Issue Score**: ${issueScore}
   **Recent Contribution Score**: ${recentContribScore}
 
