@@ -140,6 +140,10 @@ async function getRecentEvents(github, username, since = null) {
             })
             .then((res) => {
               {
+                if (owner == "Ansanjohny") {
+                  console.log("IssueResponse:", res);
+                  console.log("IssueResponse:", res.data);
+                }
                 console.log("IssueResponse:", res);
                 if (res.data?.node_id && res.data?.node_id.startsWith("I_")) {
                   return res.data.filter(
