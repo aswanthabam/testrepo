@@ -206,10 +206,9 @@ async function getData(github, username) {
 async function getStatsMessage(data) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
   const originalRepoCount = originalRepos.length;
-  console.log(originalRepos);
-  const originalRepoStars = originalRepos.reduce(
-    (acc, repo) => acc + parseInt(repo.stars)
-  );
+  const originalRepoStars = originalRepos
+    .filter((repo) => repo.name.split("/")[0] == username)
+    .reduce((acc, repo) => acc + parseInt(repo.stars));
   console.log("OSTARS", originalRepoStars);
   const forkedRepoCount = forkedRepos.length;
   const forkedRepoStars = forkedRepos.reduce((acc, repo) => acc + repo.stars);
