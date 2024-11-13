@@ -141,11 +141,11 @@ async function getRecentEvents(github, username, since = null) {
             .then((res) => {
               {
                 if (owner == "Ansanjohny") {
+                  console.log("Response Type", typeof res.data);
                   console.log(
                     "IssueResponse:",
                     JSON.stringify(res.data, null, 4)
                   );
-                  console.log("Response Type", typeof res.data);
                 }
                 var count = 0;
                 for (var data in res.data) {
