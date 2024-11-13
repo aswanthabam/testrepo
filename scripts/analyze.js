@@ -240,7 +240,7 @@ async function getStatsMessage(data) {
     } else {
       issueCount += issues;
     }
-    if (!userRepos.includes(repo)) {
+    if (userRepos.includes(repo)) {
       commitCount += commits;
     }
   }
