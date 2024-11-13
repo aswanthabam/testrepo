@@ -144,7 +144,7 @@ async function getRecentEvents(github, username, since = null) {
                   console.log("IssueResponse:", res);
                   console.log("IssueResponse:", res.data);
                 }
-                console.log("IssueResponse:", res);
+                // console.log("IssueResponse:", res);
                 if (res.data?.node_id && res.data?.node_id.startsWith("I_")) {
                   return res.data.filter(
                     (issue) => issue.user?.login === username
