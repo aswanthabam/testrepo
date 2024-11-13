@@ -206,6 +206,7 @@ async function getData(github, username) {
 async function getStatsMessage(data) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
   const originalRepoCount = originalRepos.length;
+  console.log(originalRepos);
   const originalRepoStars = originalRepos.reduce(
     (acc, repo) => acc + repo.stars
   );
