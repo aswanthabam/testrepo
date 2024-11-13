@@ -140,18 +140,8 @@ async function getRecentEvents(github, username, since = null) {
             })
             .then((res) => {
               {
-                // if (owner == "Ansanjohny") {
-                //   console.log(
-                //     "IssueResponse:",
-                //     JSON.stringify(res.data, null, 4)
-                //   );
-                // }
                 var count = 0;
                 for (var data of res.data) {
-                  if (owner == "Ansanjohny") {
-                    console.log(data);
-                    console.log(data?.node_id, data?.user?.login);
-                  }
                   if (
                     data?.node_id &&
                     data?.node_id.startsWith("I_") &&
@@ -216,22 +206,77 @@ async function getData(github, username) {
 async function getStatsMessage(data) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
   const originalRepoCount = originalRepos.length;
+  const originalRepoStars = originalRepos.reduce(
+    (acc, repo) => acc + repo.stars
+  );
   const forkedRepoCount = forkedRepos.length;
+  const forkedRepoStars = forkedRepos.reduce((acc, repo) => acc + repo.stars);
   const pullRequestCount = forkedRepos.reduce(
     (acc, repo) => acc + repo.pullRequests,
     0
   );
+  const pullRequestRepoStars = forkedRepos
+    .filter((repo) => repo.pullRequests > 0)
+    .reduce((acc, repo) => acc + repo.stars, 0);
+  const userRepos = [];
+  for (var repo of originalRepos) {
+    userRepos.push(repo.name);
+  }
+  for (var repo of forkedRepos) {
+    userRepos.push(repo.name);
+  }
   console.log("Repo Issues:", repoIssues);
-  const issueCount = Array.from(repoIssues.values()).reduce(
-    (sum, repo) => sum + repo.issues,
-    0
-  );
+  var issueNonForkCount = 0;
+  var issueCount = 0;
+  var commitCount = 0;
+  for (var [repo, value] of repoIssues) {
+    // var [owner, repoName] = repo.split("/");
+    var [commits, issues] = value;
+    if (!userRepos.includes(repo)) {
+      issueNonForkCount += issues;
+    } else {
+      issueCount += issues;
+    }
+    if (!userRepos.includes(repo)) {
+      commitCount += commits;
+    }
+  }
+  var eventScore = commitCount + issueCount;
+  var contributionScore =
+    originalRepoCount * Math.sqrt(originalRepoStars) +
+    pullRequestCount * 3 * Math.log10(pullRequestRepoStars + 1);
+  var issueScore = issueNonForkCount * 2;
+  var recentContribScore = uniqueRepoCount * 3;
 
+  var totalScore =
+    eventScore + contributionScore + issueScore + recentContribScore;
   const message = `
+  # Stats for ${originalRepos[0].owner}
+  
   **Total Repositories Created**: ${originalRepoCount}
   **Total Forked Repositories**: ${forkedRepoCount}
   **Total Pull Requests Created**: ${pullRequestCount}
-  **Total Issues Created**: ${issueCount}
+  **Total Unique Repositories Contributed To**: ${uniqueRepoCount}
+  **Total Issues Created in Non Forked Repositories**: ${issueNonForkCount}
+  **Total Issues Created in Forked Repositories**: ${issueCount}
+  **Total Commits**: ${commitCount}
+
+  ## Scoring
+
+  **Event Score**: ${eventScore}
+  **Contribution Score**: ${contributionScore}
+  **Issue Score**: ${issueScore}
+  **Recent Contribution Score**: ${recentContribScore}
+
+  **Total Score**: ${totalScore}
+
+  ## Next Steps
+  
+  ${
+    totalScore > 300
+      ? "🚀 **Congratulations!**\nYour opensource contributions are great!\nYou can participate in Top100Coders"
+      : "**Start working now**\nComplete tasks on mulearn discord server and collect karma points to participate in Top100Coders"
+  }
   `;
   return message;
 }
