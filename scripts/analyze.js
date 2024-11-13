@@ -205,7 +205,11 @@ async function getData(github, username) {
 
 async function getStatsMessage(data, username) {
   const { originalRepos, forkedRepos, uniqueRepoCount, repoIssues } = data;
-  const originalRepoCount = originalRepos.length;
+
+  const originalRepoCount = originalRepos.filter(
+    (repo) => repo.stars >= 10
+  ).length;
+
   var originalRepoStars = 0;
   for (var repo of originalRepos
     .filter((repo) => repo.name.split("/")[0] == username)
