@@ -148,6 +148,7 @@ async function getRecentEvents(github, username, since = null) {
                 }
                 var count = 0;
                 for (var data in res.data) {
+                  console.log(data?.node_id, data?.user?.login);
                   if (
                     data?.node_id &&
                     data?.node_id.startsWith("I_") &&
