@@ -210,6 +210,7 @@ async function getStatsMessage(data) {
   const originalRepoStars = originalRepos.reduce(
     (acc, repo) => acc + parseInt(repo.stars)
   );
+  console.log("OSTARS", originalRepoStars);
   const forkedRepoCount = forkedRepos.length;
   const forkedRepoStars = forkedRepos.reduce((acc, repo) => acc + repo.stars);
   const pullRequestCount = forkedRepos.reduce(
